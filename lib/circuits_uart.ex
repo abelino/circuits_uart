@@ -555,6 +555,14 @@ defmodule Circuits.UART do
     {:noreply, new_state}
   end
 
+  def terminate(reason, state) do
+    require Logger
+    Logger.warn("#{inspect __MODULE__} Calling terminate #{inspect reason}")
+    call_port(state, :close, nil)
+
+    :ok
+  end
+
   defp notify_timedout_messages(%{is_active: true, controlling_process: dest} = state, messages)
        when dest != nil do
     Enum.each(messages, &report_message(state, &1))
@@ -587,10 +595,18 @@ defmodule Circuits.UART do
     # doesn't want to handle any queuing of requests. REVISIT
     receive do
       {_, {:data, <<?r, response::binary>>}} ->
+        require Logger
+
+        if command == :close && Port.info(state.port) != nil, do:
+          Port.close(state.port)
+
         :erlang.binary_to_term(response)
     after
       timeout ->
         # Not sure how this can be recovered
+        unless Port.info(state.port) == nil, do:
+          Port.close(state.port)
+
         exit(:port_timed_out)
     end
   end
