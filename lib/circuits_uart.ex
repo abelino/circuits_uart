@@ -557,7 +557,7 @@ defmodule Circuits.UART do
 
   def terminate(reason, state) do
     require Logger
-    Logger.warn("#{inspect __MODULE__} Calling terminate #{inspect reason}")
+    Logger.warning("#{inspect __MODULE__} Calling terminate #{inspect reason}")
     call_port(state, :close, nil)
 
     :ok
